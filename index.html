@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html>
+<head>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@300&display=swap');
+  body { background: #000000; font-family: 'Be Vietnam Pro', sans-serif;  color: white; font-family: sans-serif; padding: 40px; }
+  .status { display: inline; margin-left: 10px; font-size: 0.9em; }
+  .working { color: #00ff00; }
+  .blocked { color: #ff4444; }
+  h1, h2, div, a {font-family:'Be Vietnam Pro', sans-serif; font-weight:light;}
+</style>
+</head>
+<body>
+
+  <h1>celestial links</h1>
+  <h4>a link generator, checks if a link is available for you</h4>
+  <div>
+    <a id="link0" href="https://helping.marincareers.org">Mirror 1</a>
+    <div id="status0" class="status">Checking...</div>
+  </div>
+
+  <script>
+    async function checkMirror(i) {
+      const link = document.getElementById("link" + i);
+      const status = document.getElementById("status" + i);
+      
+      try {
+
+        const response = await fetch(link.href + "/link.txt", { 
+          mode: 'cors', // Required to read the file content
+          signal: AbortSignal.timeout(5000) 
+        });
+
+        const text = await response.text();
+        if (text.trim() === "working") {
+          status.innerHTML = "<span class='working'>: Online</span>";
+        } else {
+          status.innerHTML = "<span class='blocked'>: Error</span>";
+        }
+      } catch (e) {
+        status.innerHTML = "<span class='blocked'>: Blocked/Offline</span>";
+      }
+    }
+
+    // Run the check for your link
+    checkMirror(0);
+  </script>
+</body>
+</html>
