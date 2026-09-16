@@ -1,49 +1,269 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
+
 <head>
-<style>
-@import url('https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@300&display=swap');
-  body { background: #000000; font-family: 'Be Vietnam Pro', sans-serif;  color: white; font-family: sans-serif; padding: 40px; }
-  .status { display: inline; margin-left: 10px; font-size: 0.9em; }
-  .working { color: #00ff00; }
-  .blocked { color: #ff4444; }
-  h1, h2, div, a {font-family:'Be Vietnam Pro', sans-serif; font-weight:light;}
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>celestial. | LITE</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            background: #111;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .toolbar {
+            display: flex;
+            gap: 8px;
+            padding: 12px;
+            background: #000;
+            border-bottom: 1px solid #333;
+            align-items: center;
+        }
+
+        .nav-buttons {
+            display: flex;
+            gap: 4px;
+        }
+
+        button {
+            background: #333;
+            border: none;
+            color: white;
+            padding: 8px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.2s;
+        }
+
+        button:hover {
+            background: #444;
+        }
+
+        button:active {
+            transform: scale(0.95);
+        }
+
+        button svg {
+            width: 18px;
+            height: 18px;
+            display: block;
+        }
+
+        input {
+            flex: 1;
+            padding: 8px 12px;
+            border-radius: 6px;
+            border: 1px solid #333;
+            background: #111;
+            color: white;
+            font-size: 14px;
+            outline: none;
+        }
+
+        input:focus {
+            border-color: #0066cc;
+        }
+
+        .status {
+            padding: 4px 12px;
+            background: #333;
+            border-radius: 6px;
+            font-size: 12px;
+            color: #aaa;
+        }
+
+        iframe {
+            width: 100%;
+            flex: 1;
+            border: none;
+            background: #111;
+            display: none;
+        }
+
+        .home-page {
+            display: flex;
+            flex: 1;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            gap: 12px;
+            color: #f5f5f5;
+            background: radial-gradient(circle at center, #222 0, #111 55%);
+            text-align: center;
+        }
+
+        .home-page h1 {
+            font-size: clamp(2.5rem, 8vw, 5.5rem);
+            font-weight: 500;
+            letter-spacing: 0.04em;
+        }
+
+        .home-page time {
+            color: #aaa;
+            font-size: clamp(1rem, 2vw, 1.35rem);
+            letter-spacing: 0.08em;
+        }
+
+        .container {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+        }
+    </style>
 </head>
+
 <body>
+    <div class="container">
+        <div class="toolbar">
+            <div class="nav-buttons">
+                <button id="backBtn" title="Back" aria-label="Back"><i data-lucide="arrow-left"></i></button>
+                <button id="forwardBtn" title="Forward" aria-label="Forward"><i data-lucide="arrow-right"></i></button>
+                <button id="reloadBtn" title="Reload" aria-label="Reload"><i data-lucide="rotate-cw"></i></button>
+            </div>
+            <input type="text" id="urlInput" placeholder="search duckduckgo or enter a url..." value="">
+            <button id="goBtn" title="Search" aria-label="Search"><i data-lucide="search"></i></button>
+            <div class="status" id="status" style="display: none;">Ready</div>
+        </div>
+        <main class="home-page" id="homePage">
+            <h1>celestialᴸᴵᵀᴱ</h1>
+            <time id="clock" aria-label="Current time"></time>
+        </main>
+        <iframe id="browserFrame" title="Scramjet Browser"></iframe>
+    </div>
+    <!--
+        STEP 1: Load the libraries. Keep these as plain <script> tags. Do not turn
+        them into type="module" / imports. They put their API on the global object
+        (window.$scramjet, window.$scramjetController, window.EpoxyTransport), and
+        that only happens in a classic script.
 
-  <h1>celestial links</h1>
-  <h4>a link generator, checks if a link is available for you</h4>
-  <div>
-    <a id="link0" href="https://helping.marincareers.org">Mirror 1</a>
-    <div id="status0" class="status">Checking...</div>
-  </div>
+        scramjet/ and controller/ need to live at your site root. The service worker
+        loads scramjet.js and scramjet.wasm from /scramjet/ and the inject script
+        from /controller/, so keep those paths unless you also change the controller
+        config.
+    -->
+    <script src="/clst.magic.js"></script>
+    <script src="/scramjet/scramjet.js"></script>
+    <script src="/controller/controller.api.js"></script>
+    <!-- Epoxy is the network transport. Drop in a local copy if you don't want the CDN. -->
+    <script src="https://cdn.jsdelivr.net/npm/@mercuryworkshop/epoxy-transport@3.0.1/dist/index.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
 
-  <script>
-    async function checkMirror(i) {
-      const link = document.getElementById("link" + i);
-      const status = document.getElementById("status" + i);
-      
-      try {
+    <script>
+        // STEP 2: Pull the classes off the globals the scripts above set up.
+        const { Controller } = $scramjetController;
+        const { defaultConfig } = $scramjet;
+        const EpoxyTransport = self.EpoxyTransport.default;
 
-        const response = await fetch(link.href + "/link.txt", { 
-          mode: 'cors', // Required to read the file content
-          signal: AbortSignal.timeout(5000) 
+        const iframe = document.getElementById("browserFrame");
+        const homePage = document.getElementById("homePage");
+        const urlInput = document.getElementById("urlInput");
+        const statusEl = document.getElementById("status");
+        const clock = document.getElementById("clock");
+
+        let scramjet = null;
+        let frame = null;
+
+        function setStatus(t, err = false) {
+            statusEl.textContent = t;
+            statusEl.style.display = t === "Ready" ? "none" : "block";
+            statusEl.style.color = err ? "#ff6b6b" : "#aaa";
+        }
+
+        function norm(u) {
+            const value = u.trim();
+            return /^https?:\/\//i.test(value)
+                ? value
+                : `https://search.brave.com/search?q=${encodeURIComponent(value)}`;
+        }
+
+        function updateClock() {
+            clock.textContent = new Intl.DateTimeFormat(undefined, {
+                hour: "numeric",
+                minute: "2-digit",
+                second: "2-digit"
+            }).format(new Date());
+        }
+
+        async function init() {
+            try {
+                setStatus("Initializing...");
+
+                // Wait for the service worker (registered at the bottom) to be active.
+                await navigator.serviceWorker.ready;
+
+                const serviceworker =
+                    navigator.serviceWorker.controller ??
+                    (await navigator.serviceWorker.ready).active;
+
+                // STEP 3: Connect a transport to a wisp server.
+                // Use your own wisp server in production. Public ones get
+                // rate-limited and can go offline.
+                const transport = new EpoxyTransport({
+                    wisp: "wss://wisp.mercurywork.shop/"
+                });
+
+                await transport.init();
+
+                // STEP 4: Create the controller. defaultConfig is fine to start with;
+                // change it if you need custom rewriting behaviour.
+                scramjet = new Controller({
+                    serviceworker,
+                    transport,
+                    scramjetConfig: defaultConfig
+                });
+
+                await scramjet.wait();
+
+                // STEP 5: Bind a frame to the <iframe> and navigate it.
+                frame = scramjet.createFrame(iframe);
+
+                setStatus("Ready");
+            } catch (e) {
+                console.error(e);
+                setStatus(e.message, true);
+            }
+        }
+
+        // Navigate the iframe to whatever is typed in the URL bar.
+        function go() {
+            const value = urlInput.value.trim();
+            if (!value) return;
+
+            const url = norm(value);
+            urlInput.value = url;
+            homePage.style.display = "none";
+            iframe.style.display = "block";
+            frame?.go(url);
+        }
+
+        document.getElementById("goBtn").onclick = go;
+
+        urlInput.addEventListener("keydown", e => {
+            if (e.key === "Enter") go();
         });
 
-        const text = await response.text();
-        if (text.trim() === "working") {
-          status.innerHTML = "<span class='working'>: Online</span>";
-        } else {
-          status.innerHTML = "<span class='blocked'>: Error</span>";
-        }
-      } catch (e) {
-        status.innerHTML = "<span class='blocked'>: Blocked/Offline</span>";
-      }
-    }
+        lucide.createIcons();
 
-    // Run the check for your link
-    checkMirror(0);
-  </script>
+        updateClock();
+        setInterval(updateClock, 1000);
+
+        // STEP 6: Register the service worker, then boot once it's ready.
+        // Service workers only run in a secure context: https:// or http://localhost.
+        if ("serviceWorker" in navigator) {
+            navigator.serviceWorker.register("/sw.js").then(init);
+        } else {
+            setStatus("No service worker support", true);
+        }
+    </script>
 </body>
+
 </html>
