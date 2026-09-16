@@ -129,7 +129,7 @@
                 <button id="forwardBtn" title="Forward" aria-label="Forward"><i data-lucide="arrow-right"></i></button>
                 <button id="reloadBtn" title="Reload" aria-label="Reload"><i data-lucide="rotate-cw"></i></button>
             </div>
-            <input type="text" id="urlInput" placeholder="search duckduckgo or enter a url..." value="">
+            <input type="text" id="urlInput" placeholder="search brave or enter a url..." value="">
             <button id="goBtn" title="Search" aria-label="Search"><i data-lucide="search"></i></button>
             <div class="status" id="status" style="display: none;">Ready</div>
         </div>
@@ -193,6 +193,17 @@
             }).format(new Date());
         }
 
+        function syncAddressBar() {
+            try {
+                const currentUrl = iframe.contentWindow.location.href;
+                if (currentUrl && currentUrl !== "about:blank") {
+                    urlInput.value = currentUrl;
+                }
+            } catch (e) {
+                // The frame may be navigating across origins.
+            }
+        }
+
         async function init() {
             try {
                 setStatus("Initializing...");
@@ -246,6 +257,10 @@
         }
 
         document.getElementById("goBtn").onclick = go;
+        document.getElementById("backBtn").onclick = () => frame?.back();
+        document.getElementById("forwardBtn").onclick = () => frame?.forward();
+        document.getElementById("reloadBtn").onclick = () => frame?.reload();
+        iframe.addEventListener("load", syncAddressBar);
 
         urlInput.addEventListener("keydown", e => {
             if (e.key === "Enter") go();
